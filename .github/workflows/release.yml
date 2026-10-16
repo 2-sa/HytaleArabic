@@ -16,7 +16,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $version = "0.7.0.${{ github.run_number }}"
+          $version = "0.7.2.${{ github.run_number }}"
           "version=$version" >> $env:GITHUB_OUTPUT
           "tag=v$version" >> $env:GITHUB_OUTPUT
       - name: Validate translation source
@@ -42,7 +42,7 @@ jobs:
           $process = Start-Process -FilePath $installer -ArgumentList @('--test-extract', $extract) -PassThru -Wait -WindowStyle Hidden
           if ($process.ExitCode -ne 0) { throw "Extraction failed: $($process.ExitCode)" }
           if (!(Test-Path -LiteralPath (Join-Path $extract '.test-result'))) { throw 'Extraction result missing.' }
-          foreach ($required in @('HytaleArabicManager.exe','src\client.lang','src\server.lang','tools\PrepareOnDevice.ps1','tools\baseline-0.7.0.json')) {
+          foreach ($required in @('HytaleArabicManager.exe','src\client.lang','src\server.lang','tools\PrepareOnDevice.ps1','tools\baseline-0.7.2.json')) {
             if (!(Test-Path -LiteralPath (Join-Path $extract $required))) { throw "Payload file missing: $required" }
           }
           if (Test-Path -LiteralPath (Join-Path $extract 'package')) { throw 'Release unexpectedly contains game assets.' }
@@ -80,7 +80,7 @@ jobs:
           $installer = "dist/HytaleArabicInstaller-${{ steps.version.outputs.version }}.exe"
           $portable = "dist/HytaleArabicPortable-${{ steps.version.outputs.version }}.zip"
           $notes = @'
-          ملف تثبيت ونسخة محمولة لتعريب هايتل 0.7.0. فك ضغط النسخة المحمولة كاملة، ثم افتح HytaleArabicManager.exe من المجلد الناتج؛ لا تحتاج إلى تثبيت. يفحص التطبيق تحديثات GitHub تلقائيًا ويختار نوع الملف الذي يوافق نسختك. يُنشئ التعريب من ملفات لعبتك الأصلية محليًا.
+          ملف تثبيت ونسخة محمولة لتعريب هايتل 0.7.2. فك ضغط النسخة المحمولة كاملة، ثم افتح HytaleArabicManager.exe من المجلد الناتج؛ لا تحتاج إلى تثبيت. يفحص التطبيق تحديثات GitHub تلقائيًا ويختار نوع الملف الذي يوافق نسختك. يُنشئ التعريب من ملفات لعبتك الأصلية محليًا.
 
           لم يُختبر عرض هذا الإصدار داخل اللعبة آليًا. لا يضم الإصدار ملفات اللعبة أو خطوط Windows.
           '@

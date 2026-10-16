@@ -76,7 +76,7 @@ foreach($font in @('Lexend-Bold','NunitoSans-Medium','NunitoSans-ExtraBold','Not
 }
 if($missing.Count) { Write-Utf8 (Join-Path $out 'missing-glyphs.json') ($missing | ConvertTo-Json); throw 'World texts require additional font forms; package not built.' }
 Write-Lang (Join-Path $stage 'Server\Languages\ar-SA\server.lang') $map
-$pack=[ordered]@{Group='OriginalArabic';Name='HytaleArabic';Version='0.7.0';Description='تعريب عربي أصلي لنصوص العالم وتخصيص الشخصية';Authors=@(@{Name='Arabic localization project'});ServerVersion='=0.7.0';IncludesAssetPack=$true}
+$pack=[ordered]@{Group='OriginalArabic';Name='HytaleArabic';Version='0.7.2';Description='تعريب عربي أصلي لنصوص العالم وتخصيص الشخصية';Authors=@(@{Name='Arabic localization project'});ServerVersion='=0.7.2';IncludesAssetPack=$true}
 Write-Utf8 (Join-Path $stage 'manifest.json') ($pack | ConvertTo-Json -Depth 5)
 $target=Join-Path $out 'OriginalArabic-HytaleArabic.zip'
 if(Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target }

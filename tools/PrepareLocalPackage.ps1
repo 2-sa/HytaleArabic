@@ -22,9 +22,9 @@ $prepared=[IO.Path]::GetFullPath($OutputDirectory)
 $clientOriginal=Join-Path $shared 'Language\en-US\client.lang'
 $actual=Read-Lang $clientOriginal
 $expected=Read-Lang (Join-Path $ReferenceDirectory 'reference-client.lang')
-$baselinePath=Join-Path $PSScriptRoot 'baseline-0.7.0.json'
+$baselinePath=Join-Path $PSScriptRoot 'baseline-0.7.2.json'
 $baseline=[IO.File]::ReadAllText($baselinePath)|ConvertFrom-Json
-if($baseline.GameVersion -ne '0.7.0'){throw 'Original baseline game version differs.'}
+if($baseline.GameVersion -ne '0.7.2'){throw 'Original baseline game version differs.'}
 if($baseline.EnglishClientHash -ne (File-Hash $clientOriginal)){throw 'Original client baseline differs.'}
 $assetsPath=Join-Path $root 'install\release\package\game\latest\Assets.zip'
 if($baseline.AssetsHash -ne (File-Hash $assetsPath)){throw 'Original asset baseline differs.'}
@@ -32,13 +32,13 @@ $baselineFiles=@{};foreach($item in $baseline.Files){$baselineFiles[$item.Relati
 foreach($item in $baseline.Files){
  if($null -eq $item.BeforeHash){continue}
  $original=Assert-Contained $originalRoot $item.Relative
- if((File-Hash $original) -ne $item.BeforeHash){throw "Original file differs from Hytale 0.7.0 baseline: $($item.Relative)"}
+ if((File-Hash $original) -ne $item.BeforeHash){throw "Original file differs from Hytale 0.7.2 baseline: $($item.Relative)"}
 }
-if($actual.Count -ne $expected.Count -or @($actual.Keys|Where-Object{!$expected.Contains($_) -or $actual[$_] -cne $expected[$_]}).Count){throw 'Installed English client catalog differs from 0.7.0 reference.'}
+if($actual.Count -ne $expected.Count -or @($actual.Keys|Where-Object{!$expected.Contains($_) -or $actual[$_] -cne $expected[$_]}).Count){throw 'Installed English client catalog differs from 0.7.2 reference.'}
 if(!(Test-Path -LiteralPath $world)){throw 'BuildWorldProbe output missing.'}
 $arabicSource=Read-Lang (Join-Path $v 'src\client.lang')
 $staged=Read-Lang (Join-Path $probe 'client.lang')
-if($arabicSource.Count -ne 3759 -or $staged.Count -ne $actual.Count){throw 'Client source/stage count mismatch.'}
+if($arabicSource.Count -ne 3760 -or $staged.Count -ne $actual.Count){throw 'Client source/stage count mismatch.'}
 foreach($k in $arabicSource.Keys){if(!$staged.Contains($k)){throw "Missing Arabic key: $k"}}
 $utf8=New-Object Text.UTF8Encoding($false)
 $files=New-Object 'System.Collections.Generic.List[object]'
@@ -106,7 +106,7 @@ if(!$baselineFiles.ContainsKey($arialBaselineKey) -or $null -ne $baselineFiles[$
  $stagedFiles.Add([pscustomobject]@{Relative=$arialRel.Replace('\','/');Source='@WINDOWS_ARIAL@';BeforeHash=$null;PreparedHash=(File-Hash $arial)})
  Add-Staged 'UserData\Mods\OriginalArabic-HytaleArabic.zip' $world
  foreach($f in $stagedFiles){$files.Add($f)}
- $manifest=[ordered]@{Format=1;GameVersion='0.7.0';ArabicKeys=15819;GameRoot=$root;EnglishClientHash=(File-Hash $clientOriginal);AssetsHash=(File-Hash (Join-Path $root 'install\release\package\game\latest\Assets.zip'));RuntimeVerified=$false;Files=@($files.ToArray())}
+ $manifest=[ordered]@{Format=1;GameVersion='0.7.2';ArabicKeys=15820;GameRoot=$root;EnglishClientHash=(File-Hash $clientOriginal);AssetsHash=(File-Hash (Join-Path $root 'install\release\package\game\latest\Assets.zip'));RuntimeVerified=$false;Files=@($files.ToArray())}
  [IO.File]::WriteAllText((Join-Path $prepared 'manifest.json'),($manifest|ConvertTo-Json -Depth 7),$utf8)
- Write-Output "PASS: prepared $($files.Count) files for locally installed Hytale 0.7.0; no game file modified."
+ Write-Output "PASS: prepared $($files.Count) files for locally installed Hytale 0.7.2; no game file modified."
 }catch{throw}

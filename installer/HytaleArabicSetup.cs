@@ -317,7 +317,7 @@ internal sealed class SetupWindow : Form {
         Controls.Add(panel);
         AddLabel(panel, "H", 579,24,48,49,28,Color.FromArgb(218,181,104),true);
         AddLabel(panel, remove ? "إزالة التطبيق" : "تعريب هايتل", 245,23,320,43,20,ForeColor,true);
-        AddLabel(panel, "تعريب اللعبة 0.7.0  •  التطبيق " + SetupProgram.AppVersion, 255,63,310,24,9,Color.FromArgb(154,177,195),false);
+        AddLabel(panel, "تعريب اللعبة 0.7.2  •  التطبيق " + SetupProgram.AppVersion, 255,63,310,24,9,Color.FromArgb(154,177,195),false);
         var line = new Panel {Left=0,Top=97,Width=660,Height=3,BackColor=Color.FromArgb(218,181,104)};
         panel.Controls.Add(line);
         AddLabel(this, remove ? "إزالة التطبيق من هذا الجهاز" : "كل ما تحتاجه في ملف تثبيت واحد", 36,120,588,36,14,ForeColor,true);

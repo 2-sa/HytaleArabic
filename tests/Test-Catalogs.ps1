@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 
 $source = Join-Path (Split-Path $PSScriptRoot -Parent) 'src'
 $expected = @{
-    'client.lang' = 3759
+    'client.lang' = 3760
     'server.lang' = 11134
     'wordlists.lang' = 24
 }
@@ -32,7 +32,7 @@ foreach ($file in $files) {
     }
     $total += $keys.Count
 }
-if ($avatar -ne $expectedAvatar -or $total -ne 15819) {
+if ($avatar -ne $expectedAvatar -or $total -ne 15820) {
     throw "Unexpected catalog coverage: total=$total, avatar=$avatar."
 }
 Write-Output "PASS: $total unique Arabic keys in $($files.Count) catalogs."

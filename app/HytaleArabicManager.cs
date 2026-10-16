@@ -115,7 +115,7 @@ internal sealed class ManagerWindow : Form {
         var subtitle=new Label{Text="النسخة المحلية",Left=560,Top=69,Width=140,Height=22,
             Font=new Font("Tahoma",9),ForeColor=Muted,TextAlign=ContentAlignment.MiddleLeft,RightToLeft=RightToLeft.Yes};
         header.Controls.Add(subtitle);
-        var version=new Label{Text="0.7.0",Left=510,Top=69,Width=48,Height=22,
+        var version=new Label{Text="0.7.2",Left=510,Top=69,Width=48,Height=22,
             Font=new Font("Tahoma",9),ForeColor=Muted,TextAlign=ContentAlignment.MiddleLeft,RightToLeft=RightToLeft.No};
         header.Controls.Add(version);
         updateButton.Text="فحص تحديث التطبيق";

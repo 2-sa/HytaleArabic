@@ -1,7 +1,7 @@
 param(
     [string]$PackageRoot,
     [Parameter(Mandatory=$true)][string]$OutputPath,
-    [string]$AppVersion='0.7.0.0'
+    [string]$AppVersion='0.7.2.0'
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -19,8 +19,8 @@ if (Test-Path -LiteralPath $output) { throw 'Output installer already exists; ch
 if($package){
     if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) { throw 'Local package manifest is missing.' }
     $manifest = [IO.File]::ReadAllText($manifestPath, [Text.Encoding]::UTF8) | ConvertFrom-Json
-    if ($manifest.Format -ne 1 -or $manifest.GameVersion -ne '0.7.0' -or $manifest.Files.Count -ne 19) {
-        throw 'This builder requires a complete Hytale 0.7.0 package.'
+    if ($manifest.Format -ne 1 -or $manifest.GameVersion -ne '0.7.2' -or $manifest.Files.Count -ne 19) {
+        throw 'This builder requires a complete Hytale 0.7.2 package.'
     }
     foreach ($entry in $manifest.Files) {
         if ($entry.Source -eq '@WINDOWS_ARIAL@') { continue }
@@ -48,7 +48,7 @@ if($package){
     foreach($name in @('BuildInterface.ps1','BuildWorld.ps1','BuildLoading.ps1')){
         Copy-Item -LiteralPath (Join-Path $repo "tests\$name") -Destination (Join-Path $payload 'tests')
     }
-    $toolNames=@('Common.ps1','ManagePackage.ps1','PrepareOnDevice.ps1','PrepareLocalPackage.ps1','SnapshotGameReferences.ps1','ArabicText.cs','FontAtlas.cs','baseline-0.7.0.json')
+    $toolNames=@('Common.ps1','ManagePackage.ps1','PrepareOnDevice.ps1','PrepareLocalPackage.ps1','SnapshotGameReferences.ps1','ArabicText.cs','FontAtlas.cs','baseline-0.7.2.json')
 }
 foreach($name in $toolNames){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $payloadTools}
 Copy-Item -LiteralPath (Join-Path $repo 'README.md') -Destination (Join-Path $payload 'README.txt')

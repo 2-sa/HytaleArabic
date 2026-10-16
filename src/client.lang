@@ -2169,6 +2169,7 @@ mainMenu.mods.install.installed = مثبّت
 mainMenu.mods.install.failed = إعادة المحاولة
 mainMenu.mods.install.failedHint = لم يكتمل التثبيت. تحقق من اتصالك وحاول مجددًا.
 mainMenu.mods.install.blockedByFileHint = يوجد ملف آخر باسم {file} في مجلد الإضافات. أزله ثم حاول مجددًا.
+mainMenu.mods.install.distributionBlockedHint = [TMP] لا يسمح صاحب هذه الإضافة بتنزيلها من داخل اللعبة. نزّلها من CurseForge مباشرة.
 mainMenu.mods.browse.allClasses = الكل
 mainMenu.mods.browse.byCategory = استعراض حسب الفئة
 mainMenu.mods.browse.filters = المرشحات

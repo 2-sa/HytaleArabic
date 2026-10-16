@@ -13,9 +13,10 @@ using System.IO;
 internal static class UpdaterTests {
     private static void Assert(bool value, string message) { if (!value) throw new Exception(message); }
     private static string Release(string tag, string state="uploaded", bool draft=false) {
+        string version=tag.Substring(1);
         return "{\"tag_name\":\""+tag+"\",\"draft\":"+draft.ToString().ToLowerInvariant()+
-            ",\"prerelease\":false,\"assets\":[{\"name\":\"HytaleArabicInstaller-0.7.0.2.exe\",\"state\":\""+state+
-            "\"},{\"name\":\"HytaleArabicPortable-0.7.0.2.zip\",\"state\":\"uploaded\"},{\"name\":\"SHA256.txt\",\"state\":\"uploaded\"}]}";
+            ",\"prerelease\":false,\"assets\":[{\"name\":\"HytaleArabicInstaller-"+version+".exe\",\"state\":\""+state+
+            "\"},{\"name\":\"HytaleArabicPortable-"+version+".zip\",\"state\":\"uploaded\"},{\"name\":\"SHA256.txt\",\"state\":\"uploaded\"}]}";
     }
     private static void Main() {
         var oldVersion=new Version("0.7.0.1");
@@ -28,6 +29,8 @@ internal static class UpdaterTests {
         Assert(GitHubUpdater.ParseRelease(Release("v0.7.0.1"),oldVersion,false)==null,"old version offered");
         Assert(GitHubUpdater.ParseRelease(Release("v0.7.0.2","pending"),oldVersion,false)==null,"pending asset offered");
         Assert(GitHubUpdater.ParseRelease(Release("v0.7.0.2","uploaded",true),oldVersion,false)==null,"draft offered");
+        var gameUpdate=GitHubUpdater.ParseRelease(Release("v0.7.2.7"),oldVersion,false);
+        Assert(gameUpdate!=null && gameUpdate.Version==new Version("0.7.2.7"),"0.7.2 app update missing");
         string name="HytaleArabicInstaller-0.7.0.2.exe";
         string hash=new string('a',64);
         Assert(GitHubUpdater.ParseChecksum(hash+"  "+name+"\n",name)==hash.ToUpperInvariant(),"checksum parse failed");

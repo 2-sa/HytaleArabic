@@ -51,7 +51,7 @@ $current=$null
 if(Test-Path -LiteralPath $statePath){$current=[IO.File]::ReadAllText($statePath)|ConvertFrom-Json}
 if($Action -eq 'status'){
  $status=if($null -eq $current){'not-installed'}else{$current.Status}
- Write-Output "Localization: $status; package 0.7.0; 15819 source keys."
+ Write-Output "Localization: $status; package 0.7.2; 15820 source keys."
  Legacy-TooltipStatus
  return
 }
@@ -64,13 +64,13 @@ if($Action -eq 'install'){
   $script:installOffset=10
  }
  $manifest=[IO.File]::ReadAllText($manifestPath)|ConvertFrom-Json
- if($manifest.Format -ne 1 -or $manifest.GameVersion -ne '0.7.0' -or $manifest.GameRoot -ne $root -or $manifest.Files.Count -ne 19){throw 'Prepared package identity does not match this installation.'}
+ if($manifest.Format -ne 1 -or $manifest.GameVersion -ne '0.7.2' -or $manifest.GameRoot -ne $root -or $manifest.Files.Count -ne 19){throw 'Prepared package identity does not match this installation.'}
  $installTotal=($manifest.Files.Count*3)+@($manifest.Files|Where-Object{$null -ne $_.BeforeHash}).Count
  $step=0
  Progress-Line 'install' $step $installTotal 'version'
  $client=Assert-Contained $root 'install\release\package\game\latest\Client\Data\Shared\Language\en-US\client.lang'
  $assets=Assert-Contained $root 'install\release\package\game\latest\Assets.zip'
- if((File-Hash $client) -ne $manifest.EnglishClientHash -or (File-Hash $assets) -ne $manifest.AssetsHash){throw 'Game version changed; this 0.7.0 package will not be installed.'}
+ if((File-Hash $client) -ne $manifest.EnglishClientHash -or (File-Hash $assets) -ne $manifest.AssetsHash){throw 'Game version changed; this 0.7.2 package will not be installed.'}
  $records=New-Object 'System.Collections.Generic.List[object]'
  foreach($item in $manifest.Files){
   $target=Assert-Contained $root $item.Relative
@@ -88,13 +88,13 @@ if($Action -eq 'install'){
   if((File-Hash $origin) -ne $item.BeforeHash){throw 'Original backup verification failed.'}
   $step++;Progress-Line 'install' $step $installTotal 'backup'
  }
- $state=[ordered]@{Format=1;Status='installing';GameVersion='0.7.0';Root=$root;Files=@($records.ToArray())}
+ $state=[ordered]@{Format=1;Status='installing';GameVersion='0.7.2';Root=$root;Files=@($records.ToArray())}
  Save-State $state
  try{
   foreach($item in $records){Copy-Atomic (Source-Path $item) (Assert-Contained $root $item.Relative);$step++;Progress-Line 'install' $step $installTotal 'apply'}
   foreach($item in $records){if((File-Hash (Assert-Contained $root $item.Relative)) -ne $item.PreparedHash){throw 'Post-install hash verification failed.'};$step++;Progress-Line 'install' $step $installTotal 'verify'}
   $state.Status='installed';Save-State $state
-  Write-Output 'PASS: Arabic 0.7.0 files installed with verified original backups.'
+  Write-Output 'PASS: Arabic 0.7.2 files installed with verified original backups.'
  }catch{
   Write-Warning 'Installation interrupted. Use Restore in the manager before updating the game.'
   throw
@@ -102,7 +102,7 @@ if($Action -eq 'install'){
  return
 }
 if($null -eq $current -or $current.Status -eq 'removed'){Write-Output 'Localization is already removed.';Legacy-TooltipStatus;return}
-if($current.Format -ne 1 -or $current.Root -ne $root -or $current.GameVersion -ne '0.7.0' -or $current.Files.Count -ne 19){throw 'Recovery record does not match this game.'}
+if($current.Format -ne 1 -or $current.Root -ne $root -or $current.GameVersion -notin @('0.7.0','0.7.2') -or $current.Files.Count -ne 19){throw 'Recovery record does not match this game.'}
 if($current.Status -notin @('installed','installing','restoring')){throw 'Unknown recovery state.'}
 $restoreTotal=$current.Files.Count*3
 $step=0

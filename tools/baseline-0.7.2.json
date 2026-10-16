@@ -1,0 +1,84 @@
+{
+  "Format": 1,
+  "GameVersion": "0.7.2",
+  "EnglishClientHash": "C5B7CCEAD0F343D9D3419F24E67BAE37EBADFD4C769A0F0A41E5B03D973D19DA",
+  "AssetsHash": "EE8F8D5B332874EB928144726077FA66F80C117A5412017A5CDE6FCE2D9BB2A0",
+  "Files": [
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/Language/ar-SA/meta.lang",
+      "BeforeHash": null
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/Language/ar-SA/client.lang",
+      "BeforeHash": null
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/Lexend-Bold.json",
+      "BeforeHash": "A5B610C26332B1A05DDD03362CE1D11014031F4615B6F22264ABFD2F2F199612"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/Lexend-Bold.png",
+      "BeforeHash": "E1FF670607029E1478D603AE10F20B4E940094BECAB8A0786491143A983D65F7"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NunitoSans-Medium.json",
+      "BeforeHash": "D9429256E7EE45736743AA23E58E55638999C03529B37D6065A7F1FEC10ABD83"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NunitoSans-Medium.png",
+      "BeforeHash": "62F74BB14C9FFA1668EB1733602A72072489127FA24E7CBB4FF4052D780681DD"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NunitoSans-ExtraBold.json",
+      "BeforeHash": "066DC830D5C51ED437C01B9043A6D825FFA30E626D027283010B58C944357C03"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NunitoSans-ExtraBold.png",
+      "BeforeHash": "9CA3A63AA81AEEBC609CCC9B96F040ECAD810713A6F49B7D9237E8F4AE830421"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NotoSans-Bold.json",
+      "BeforeHash": "4536C7EF6B66CE82E9775BC39C6226C9A024B5DB721C408C2CD5F9A157959453"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NotoSans-Bold.png",
+      "BeforeHash": "370C6A65579BED51F922FF3E00C212C06B29EE87F87A65A88569B85B8BB97C4F"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NotoMono-Regular.json",
+      "BeforeHash": "2FCDF5809EFDF80A29F4F7FA45F7A9D2224FD5219758A8C734E8D0EFCD938225"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/NotoMono-Regular.png",
+      "BeforeHash": "0DC84A25BA36DC5EE4BA866B7717FAA5768E0E96703FF7A2683F00217AFBE465"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Theme/NoesisTheme.Fonts.xaml",
+      "BeforeHash": "C5FB8FD48E23959FBAD787D84E79DABFE97B078FBF6740040D0DD9FB6CDF849A"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/DesignSystem/Fonts.xaml",
+      "BeforeHash": "8FC5B8606DAEF640A0D8174D907BC5E587B056E71C1243A551BC48602D358460"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/DesignSystem/Fonts.TC.xaml",
+      "BeforeHash": "91A467478D65EF1FEDA11CFE62513266A7A14FD586B5A9D50C4032818108F397"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/GameLoading/GameLoading.xaml",
+      "BeforeHash": "B8F54123BE066F6AE6BD4CDECC5D2E3F8CBB987FD116C7C454D800DB997B4E15"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/GameDisconnected/GameDisconnected.xaml",
+      "BeforeHash": "332079B6A174FC53CBF2072F7FC20D33F678C611F6065A6300B3A266F3CB1797"
+    },
+    {
+      "Relative": "install/release/package/game/latest/Client/Data/Shared/UI/Fonts/HytaleArabic-Windows.ttf",
+      "BeforeHash": null
+    },
+    {
+      "Relative": "UserData/Mods/OriginalArabic-HytaleArabic.zip",
+      "BeforeHash": null
+    }
+  ]
+}

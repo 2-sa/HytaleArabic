@@ -9,7 +9,7 @@ $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath($GameRoot).TrimEnd('\')
 $package=[IO.Path]::GetFullPath($PackageRoot).TrimEnd('\')
 $app=Split-Path $PSScriptRoot -Parent
-$baseline=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'baseline-0.7.0.json')) | ConvertFrom-Json
+$baseline=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'baseline-0.7.2.json')) | ConvertFrom-Json
 $progressTotal=10+($baseline.Files.Count*3)+@($baseline.Files|Where-Object {$null -ne $_.BeforeHash}).Count
 $sharedRel='install\release\package\game\latest\Client\Data\Shared'
 $shared=Join-Path $root $sharedRel
@@ -22,7 +22,7 @@ if(Test-Path -LiteralPath $statePath){
     if($state.Status -ne 'removed'){throw 'Existing localization must be restored before preparing a new package.'}
 }
 if((File-Hash $english) -ne $baseline.EnglishClientHash -or (File-Hash $assets) -ne $baseline.AssetsHash){
-    throw 'Game version changed; Hytale 0.7.0 source cannot be applied.'
+    throw 'Game version changed; Hytale 0.7.2 source cannot be applied.'
 }
 foreach($entry in $baseline.Files){
     $target=Assert-Contained $root $entry.Relative
@@ -36,6 +36,7 @@ $fonts=Join-Path $stage 'fonts'
 $loading=Join-Path $stage 'loading'
 $world=Join-Path $stage 'world'
 $prepared=Join-Path $stage 'package'
+$windowsPowerShell=(Get-Command powershell.exe -ErrorAction Stop).Source
 [void][IO.Directory]::CreateDirectory($stage)
 try{
     Write-Output "PROGRESS|install|0|$progressTotal|version"
@@ -44,13 +45,13 @@ try{
     Write-Output "PROGRESS|install|1|$progressTotal|fonts"
     $fontStep=1
     foreach($font in @('Lexend-Bold','NunitoSans-Medium','NunitoSans-ExtraBold','NotoSans-Bold','NotoMono-Regular')){
-        & "$PSHOME\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'tests\BuildInterface.ps1') -GameRoot $root -FontName $font -FontDirectory (Join-Path $shared 'UI\Fonts') -OutputDirectory $fonts
+        & $windowsPowerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'tests\BuildInterface.ps1') -GameRoot $root -FontName $font -FontDirectory (Join-Path $shared 'UI\Fonts') -OutputDirectory $fonts
         if($LASTEXITCODE -ne 0){throw "Arabic font generation failed: $font"}
         $fontStep++
         Write-Output "PROGRESS|install|$fontStep|$progressTotal|fonts"
     }
     Write-Output "PROGRESS|install|7|$progressTotal|world"
-    & "$PSHOME\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'tests\BuildWorld.ps1') -GameRoot $root -FontDirectory $fonts -ReferenceDirectory $refs -OutputDirectory $world
+    & $windowsPowerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $app 'tests\BuildWorld.ps1') -GameRoot $root -FontDirectory $fonts -ReferenceDirectory $refs -OutputDirectory $world
     if($LASTEXITCODE -ne 0){throw 'World package generation failed.'}
     Write-Output "PROGRESS|install|8|$progressTotal|loading"
     & (Join-Path $app 'tests\BuildLoading.ps1') -GameRoot $root -OriginalShared $shared -InterfaceDirectory $fonts -OutputDirectory $loading
