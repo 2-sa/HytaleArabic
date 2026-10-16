@@ -48,6 +48,7 @@ jobs:
           if (Test-Path -LiteralPath (Join-Path $extract 'package')) { throw 'Release unexpectedly contains game assets.' }
           $version = [Reflection.AssemblyName]::GetAssemblyName($installer).Version.ToString()
           if ($version -ne '${{ steps.version.outputs.version }}') { throw "Unexpected installer version: $version" }
+          .\tests\Test-InstallerWait.ps1 -InstallerPath $installer
       - name: Build and verify portable archive
         shell: powershell
         run: |

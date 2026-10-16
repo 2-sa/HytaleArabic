@@ -434,7 +434,9 @@ internal sealed class ManagerWindow : Form {
                 return;
             }
             try {
-                Process.Start(new ProcessStartInfo((string)e.Result){UseShellExecute=true});
+                var start=new ProcessStartInfo((string)e.Result){UseShellExecute=true};
+                if(!portable) start.Arguments="--wait-pid "+Process.GetCurrentProcess().Id;
+                Process.Start(start);
                 running=false;
                 Close();
             } catch(Exception problem) {

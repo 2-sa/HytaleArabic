@@ -33,6 +33,26 @@ internal static class SetupProgram {
 
     [STAThread]
     private static void Main(string[] args) {
+        if (args.Length >= 2 && args[0] == "--wait-pid") {
+            int parentPid;
+            if (!Int32.TryParse(args[1], out parentPid) || parentPid <= 0) {
+                MessageBox.Show("تعذّر تحديد عملية التطبيق التي يجب إغلاقها.", AppName);
+                return;
+            }
+            try {
+                using (Process parent = Process.GetProcessById(parentPid)) {
+                    if (!parent.WaitForExit(30000)) {
+                        MessageBox.Show("أغلق تطبيق التعريب ثم حاول التحديث مرة أخرى.", AppName);
+                        return;
+                    }
+                }
+            } catch (ArgumentException) {
+                // The manager already exited before the installer started.
+            }
+            string[] remaining = new string[args.Length - 2];
+            Array.Copy(args, 2, remaining, 0, remaining.Length);
+            args = remaining;
+        }
         if (args.Length == 2 && args[0] == "--test-extract") {
             try {
                 if (Directory.Exists(args[1])) throw new IOException("Test destination already exists.");
@@ -382,7 +402,11 @@ internal sealed class SetupWindow : Form {
             busy=false;
             if (e.Error != null) {
                 state.Text="لم يكتمل العمل";
-                MessageBox.Show(e.Error.Message,SetupProgram.AppName,MessageBoxButtons.OK,MessageBoxIcon.Error);
+                progress.Value=0;
+                string message=e.Error is IOException && (e.Error.HResult & 0xFFFF)==32
+                    ? "أحد ملفات التطبيق قيد الاستخدام. أغلق تطبيق التعريب وأي نافذة تثبيت أخرى، ثم حاول مجددًا."
+                    : e.Error.Message;
+                MessageBox.Show(message,SetupProgram.AppName,MessageBoxButtons.OK,MessageBoxIcon.Error);
                 action.Enabled=true;desktop.Enabled=true;
                 return;
             }
