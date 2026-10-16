@@ -51,6 +51,7 @@ internal sealed class ManagerWindow : Form {
     private readonly Button restore=new Button();
     private readonly Button choose=new Button();
     private readonly Button toggleDetails=new Button();
+    private readonly Button updateButton=new Button();
     private readonly Label statusText=new Label();
     private readonly Label statusHelp=new Label();
     private Label progressText=new Label();
@@ -62,6 +63,8 @@ internal sealed class ManagerWindow : Form {
     private readonly ProgressTrack bar=new ProgressTrack();
     private readonly Timer animation=new Timer();
     private bool running;
+    private bool checkingUpdate;
+    private AvailableUpdate availableUpdate;
     private string currentAction="";
     private int lastDone, lastTotal;
 
@@ -113,6 +116,14 @@ internal sealed class ManagerWindow : Form {
         var version=new Label{Text="0.7.0",Left=510,Top=69,Width=48,Height=22,
             Font=new Font("Tahoma",9),ForeColor=Muted,TextAlign=ContentAlignment.MiddleLeft,RightToLeft=RightToLeft.No};
         header.Controls.Add(version);
+        updateButton.Text="فحص تحديث التطبيق";
+        updateButton.SetBounds(31,66,230,31);
+        StyleButton(updateButton,Surface,Ice,false);
+        updateButton.Click+=(s,e)=>{
+            if(running || checkingUpdate)return;
+            if(availableUpdate==null)CheckForUpdates(); else DownloadUpdate();
+        };
+        header.Controls.Add(updateButton);
         var edge=new Panel{Left=0,Top=107,Width=800,Height=3,BackColor=Gold};
         header.Controls.Add(edge);
     }
@@ -239,7 +250,7 @@ internal sealed class ManagerWindow : Form {
                 throw new FileNotFoundException("ملفات التطبيق ناقصة. افتحه من مجلده الكامل.");
         } catch(Exception problem) { ShowError(problem.Message);return; }
         running=true;currentAction=action;lastDone=0;lastTotal=0;details.Clear();
-        apply.Enabled=false;restore.Enabled=false;choose.Enabled=false;root.Enabled=false;
+        apply.Enabled=false;restore.Enabled=false;choose.Enabled=false;root.Enabled=false;updateButton.Enabled=false;
         bar.Visible=(action!="status");
         bar.Busy=(action!="status");bar.Percent=0;bar.Tick=0;bar.Invalidate();
         if(action!="status") animation.Start();
@@ -270,7 +281,7 @@ internal sealed class ManagerWindow : Form {
         worker.RunWorkerCompleted+=(s,e)=>{
             try {
             animation.Stop();bar.Busy=false;
-            apply.Enabled=true;restore.Enabled=true;choose.Enabled=true;root.Enabled=true;
+            apply.Enabled=true;restore.Enabled=true;choose.Enabled=true;root.Enabled=true;updateButton.Enabled=true;
             if(e.Error!=null){ShowError(e.Error.Message);return;}
             var result=(RunResult)e.Result;
             if(result.ExitCode!=0){
@@ -294,7 +305,7 @@ internal sealed class ManagerWindow : Form {
                 progressText.Text="اختر ما تريد فعله";
                 footerHint.Text="اختر الخطوة المناسبة ثم اتبع الرسالة الظاهرة";
             }
-            } finally {running=false;}
+            } finally {running=false;if(action=="status")CheckForUpdates();}
         };
         worker.RunWorkerAsync();
     }
@@ -346,5 +357,61 @@ internal sealed class ManagerWindow : Form {
         footerHint.Text="يمكنك فتح التفاصيل لمعرفة السبب";
         if(currentAction=="install" && details.Text.Contains("Installation interrupted"))SetNextAction(true);
         if(details.Text.Length==0)details.Text=message;
+    }
+
+    private void CheckForUpdates() {
+        if(checkingUpdate || running)return;
+        checkingUpdate=true;
+        updateButton.Enabled=false;
+        updateButton.Text="نفحص التحديثات...";
+        updateButton.BackColor=Surface;updateButton.ForeColor=Ice;
+        var worker=new BackgroundWorker();
+        worker.DoWork+=(s,e)=>e.Result=GitHubUpdater.Check();
+        worker.RunWorkerCompleted+=(s,e)=>{
+            checkingUpdate=false;
+            updateButton.Enabled=!running;
+            if(e.Error!=null){updateButton.Text="إعادة فحص التحديثات";return;}
+            availableUpdate=(AvailableUpdate)e.Result;
+            updateButton.Text=availableUpdate==null?"التطبيق محدّث · إعادة الفحص":"تحديث التطبيق إلى "+availableUpdate.Version;
+            if(availableUpdate!=null){updateButton.BackColor=Gold;updateButton.ForeColor=Base;}
+        };
+        worker.RunWorkerAsync();
+    }
+
+    private void DownloadUpdate() {
+        if(running || availableUpdate==null)return;
+        running=true;
+        apply.Enabled=false;restore.Enabled=false;choose.Enabled=false;updateButton.Enabled=false;
+        bar.Visible=true;bar.Busy=false;bar.Percent=0;bar.Invalidate();
+        percent.Text="0%";
+        progressText.Text="ننزل تحديث التطبيق من GitHub";
+        footerHint.Text="اترك التطبيق مفتوحًا حتى نتحقق من التحديث";
+        var selected=availableUpdate;
+        var worker=new BackgroundWorker{WorkerReportsProgress=true};
+        worker.DoWork+=(s,e)=>e.Result=GitHubUpdater.Download(selected,p=>worker.ReportProgress(p));
+        worker.ProgressChanged+=(s,e)=>{
+            bar.Percent=Math.Max(0,Math.Min(100,e.ProgressPercentage));bar.Invalidate();
+            percent.Text=bar.Percent+"%";
+            if(bar.Percent==100)progressText.Text="اكتمل تنزيل التحديث والتحقق منه";
+        };
+        worker.RunWorkerCompleted+=(s,e)=>{
+            if(e.Error!=null){
+                running=false;apply.Enabled=true;restore.Enabled=true;choose.Enabled=true;updateButton.Enabled=true;
+                progressText.Text="تعذّر تحديث التطبيق";
+                footerHint.Text="أعد المحاولة أو افتح التفاصيل لمعرفة السبب";
+                details.Text=e.Error.Message;
+                return;
+            }
+            try {
+                Process.Start(new ProcessStartInfo((string)e.Result){UseShellExecute=true});
+                running=false;
+                Close();
+            } catch(Exception problem) {
+                running=false;apply.Enabled=true;restore.Enabled=true;choose.Enabled=true;updateButton.Enabled=true;
+                progressText.Text="تعذّر فتح المُثبّت";
+                details.Text=problem.Message;
+            }
+        };
+        worker.RunWorkerAsync();
     }
 }

@@ -57,7 +57,7 @@ $assemblyInfo=Join-Path $build 'AssemblyInfo.cs'
 [IO.File]::WriteAllText($assemblyInfo, "using System.Reflection; [assembly: AssemblyVersion(`"$AppVersion`")] [assembly: AssemblyFileVersion(`"$AppVersion`")]", [Text.UTF8Encoding]::new($false))
 
 $manager = Join-Path $payload 'HytaleArabicManager.exe'
-& $compiler /nologo /target:winexe "/out:$manager" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll $assemblyInfo (Join-Path $repo 'app\HytaleArabicManager.cs')
+& $compiler /nologo /target:winexe "/out:$manager" /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll $assemblyInfo (Join-Path $repo 'app\HytaleArabicManager.cs') (Join-Path $repo 'app\GitHubUpdater.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Manager compilation failed.' }
 
 $archivePath = Join-Path $build 'payload.zip'

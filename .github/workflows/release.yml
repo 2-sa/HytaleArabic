@@ -24,6 +24,7 @@ jobs:
         run: |
           .\tests\Test-Catalogs.ps1
           .\tools\Test-MigrateTranslationSource.ps1
+          .\tests\Test-GitHubUpdater.ps1
           foreach ($file in Get-ChildItem .\tools,.\tests -Filter '*.ps1' -Recurse -File) {
             $tokens = $null
             $errors = $null
@@ -57,7 +58,7 @@ jobs:
           $tag = '${{ steps.version.outputs.tag }}'
           $installer = "dist/HytaleArabicInstaller-${{ steps.version.outputs.version }}.exe"
           $notes = @'
-          مُثبّت مدير تعريب هايتل 0.7.0. يُنشئ ملفات التعريب من نسختك الأصلية محليًا عند اختيار التثبيت داخل التطبيق. أغلق اللعبة والمشغّل أولًا. إذا كان التعريب مركّبًا، استرجع الملفات الأصلية من التطبيق قبل تركيب النسخة الجديدة.
+          مُثبّت مدير تعريب هايتل 0.7.0. يفحص التطبيق إصدارات GitHub تلقائيًا، ويعرض زر التحديث عند صدور نسخة أحدث. يتحقق من بصمة المُثبّت قبل فتحه. يُنشئ ملفات التعريب من نسختك الأصلية محليًا عند اختيار التثبيت داخل التطبيق. أغلق اللعبة والمشغّل قبل تعديل ملفات اللعبة.
 
           لم يُختبر عرض هذا الإصدار داخل اللعبة آليًا. يحتفظ المثبّت بالمصدر فقط ولا يضم ملفات اللعبة أو خطوط Windows.
           '@
