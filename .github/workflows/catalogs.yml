@@ -5,11 +5,17 @@ on:
     paths:
       - 'src/**'
       - 'tests/Test-Catalogs.ps1'
+      - 'tools/Migrate-TranslationSource.ps1'
+      - 'tools/Test-MigrateTranslationSource.ps1'
+      - 'tools/MessageTokens.cs'
       - '.github/workflows/catalogs.yml'
   pull_request:
     paths:
       - 'src/**'
       - 'tests/Test-Catalogs.ps1'
+      - 'tools/Migrate-TranslationSource.ps1'
+      - 'tools/Test-MigrateTranslationSource.ps1'
+      - 'tools/MessageTokens.cs'
       - '.github/workflows/catalogs.yml'
 
 jobs:
@@ -20,4 +26,7 @@ jobs:
       - name: Validate Arabic catalogs
         shell: powershell
         run: .\tests\Test-Catalogs.ps1
+      - name: Validate update migration
+        shell: powershell
+        run: .\tools\Test-MigrateTranslationSource.ps1
 

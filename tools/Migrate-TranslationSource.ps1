@@ -5,8 +5,8 @@
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [ValidateSet('FlatReference','Mirrored')][string]$ReferenceLayout='FlatReference'
 )
-. "$PSScriptRoot\..\..\tools\Common.ps1"
-Add-Type -Path "$PSScriptRoot\..\..\tools\MessageTokens.cs"
+. "$PSScriptRoot\Common.ps1"
+Add-Type -Path "$PSScriptRoot\MessageTokens.cs"
 
 function Full-Directory([string]$Path) {
     if(!(Test-Path -LiteralPath $Path -PathType Container)){throw "Input directory missing: $Path"}
