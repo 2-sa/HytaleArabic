@@ -1,0 +1,12 @@
+build/
+dist/
+package/
+reference-snapshot/
+tests/linguistic-audit/
+*.exe
+*.zip
+*.png
+*.ttf
+*.log
+*.tmp
+

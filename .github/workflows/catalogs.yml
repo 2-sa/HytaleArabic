@@ -1,0 +1,23 @@
+name: Catalog checks
+
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'tests/Test-Catalogs.ps1'
+      - '.github/workflows/catalogs.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/Test-Catalogs.ps1'
+      - '.github/workflows/catalogs.yml'
+
+jobs:
+  catalogs:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Arabic catalogs
+        shell: powershell
+        run: .\tests\Test-Catalogs.ps1
+
