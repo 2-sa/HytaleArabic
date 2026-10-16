@@ -216,6 +216,9 @@ internal sealed class ManagerWindow : Form {
     private string StageText(string stage) {
         switch(stage){
             case "version": return "نتأكد من نسخة اللعبة";
+            case "fonts": return "نجهّز الخط العربي من ملفات اللعبة";
+            case "world": return "نجهّز نصوص العالم";
+            case "loading": return "نجهّز شاشات اللعبة";
             case "check": return "نفحص الملفات";
             case "backup": return "نحفظ الملفات الأصلية";
             case "apply": return "نضع التعريب";
@@ -232,7 +235,7 @@ internal sealed class ManagerWindow : Form {
             script=Path.Combine(bundle,"tools","ManagePackage.ps1");
             package=Path.Combine(bundle,"package");
             if(!Directory.Exists(game)) throw new DirectoryNotFoundException("لم نجد مجلد اللعبة. اضغط تغيير واختر مجلد Hytale.");
-            if(!File.Exists(script)||!File.Exists(Path.Combine(package,"manifest.json")))
+            if(!File.Exists(script))
                 throw new FileNotFoundException("ملفات التطبيق ناقصة. افتحه من مجلده الكامل.");
         } catch(Exception problem) { ShowError(problem.Message);return; }
         running=true;currentAction=action;lastDone=0;lastTotal=0;details.Clear();

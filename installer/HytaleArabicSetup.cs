@@ -15,6 +15,7 @@ using Microsoft.Win32;
 
 internal static class SetupProgram {
     internal const string AppName = "تعريب هايتل";
+    internal static readonly string AppVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
     internal static readonly string InstallRoot = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "Programs", "HytaleArabicManager");
@@ -87,32 +88,66 @@ internal static class SetupProgram {
         return Regex.IsMatch(json, "\"Status\"\\s*:\\s*\"(installed|installing|restoring)\"", RegexOptions.IgnoreCase);
     }
 
+    private static bool CanRemovePrevious(string folder) {
+        if (!File.Exists(Path.Combine(folder, Marker)) || !File.Exists(Path.Combine(folder, FileList))) return false;
+        var expected = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string line in File.ReadAllLines(Path.Combine(folder, FileList), Encoding.UTF8)) {
+            string[] parts = line.Split('|');
+            if (parts.Length != 2) return false;
+            string path = Payload.SafePath(folder, parts[0]);
+            if (!File.Exists(path) || !Payload.Hash(path).Equals(parts[1], StringComparison.OrdinalIgnoreCase)) return false;
+            expected.Add(path);
+        }
+        foreach (string name in new [] {Marker, FileList, "Uninstall.exe"}) expected.Add(Path.Combine(folder, name));
+        foreach (string path in Directory.GetFiles(folder, "*", SearchOption.AllDirectories)) {
+            if (!expected.Contains(path)) return false;
+        }
+        return true;
+    }
+
     internal static string Install(bool desktop, Action<int,string> progress) {
         string parent = Path.GetDirectoryName(InstallRoot);
         Directory.CreateDirectory(parent);
-        if (Directory.Exists(InstallRoot)) {
-            if (File.Exists(Path.Combine(InstallRoot, Marker))) throw new IOException("التطبيق مثبت مسبقًا. افتحه من قائمة ابدأ.");
+        bool upgrading = Directory.Exists(InstallRoot);
+        if (upgrading && !File.Exists(Path.Combine(InstallRoot, Marker)))
             throw new IOException("مجلد التطبيق موجود، لكنه ليس تابعًا لهذا المثبّت. لم نغيّره.");
-        }
+        if (upgrading && Process.GetProcessesByName("HytaleArabicManager").Length > 0)
+            throw new IOException("أغلق تطبيق التعريب قبل تحديثه.");
         string stage = Path.Combine(parent, "HytaleArabicManager.stage-" + Guid.NewGuid().ToString("N"));
+        string previous = null;
         Directory.CreateDirectory(stage);
         try {
             Payload.Extract(stage, progress);
-            File.WriteAllText(Path.Combine(stage, Marker), "0.7.0", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(stage, Marker), AppVersion, Encoding.UTF8);
             File.Copy(Assembly.GetExecutingAssembly().Location, Path.Combine(stage, "Uninstall.exe"));
-            Directory.Move(stage, InstallRoot);
+            if (upgrading) {
+                previous = Path.Combine(parent, "HytaleArabicManager.previous-" + Guid.NewGuid().ToString("N"));
+                Directory.Move(InstallRoot, previous);
+            }
+            try { Directory.Move(stage, InstallRoot); }
+            catch {
+                if (previous != null && Directory.Exists(previous) && !Directory.Exists(InstallRoot))
+                    Directory.Move(previous, InstallRoot);
+                throw;
+            }
         } catch {
             if (Directory.Exists(stage)) Directory.Delete(stage, true);
             throw;
         }
         string manager = Path.Combine(InstallRoot, "HytaleArabicManager.exe");
         string warning = "";
+        if (previous != null) {
+            try {
+                if (CanRemovePrevious(previous)) Directory.Delete(previous, true);
+                else warning = "حُفظت النسخة السابقة في " + previous;
+            } catch { warning = "حُفظت النسخة السابقة في " + previous; }
+        }
         try {
             MakeShortcut(StartShortcut, manager);
             if (desktop) MakeShortcut(DesktopShortcut, manager);
             using (RegistryKey key = Registry.CurrentUser.CreateSubKey(UninstallKey)) {
                 key.SetValue("DisplayName", AppName);
-                key.SetValue("DisplayVersion", "0.7.0");
+                key.SetValue("DisplayVersion", AppVersion);
                 key.SetValue("Publisher", "Hytale Arabic localization project");
                 key.SetValue("InstallLocation", InstallRoot);
                 key.SetValue("DisplayIcon", manager);
@@ -120,26 +155,42 @@ internal static class SetupProgram {
                 key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                 key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
             }
-        } catch (Exception ex) { warning = "تثبّت التطبيق، لكن تعذّر إنشاء أحد الاختصارات أو إدخال الإزالة: " + ex.Message; }
+        } catch (Exception ex) { warning += " تعذّر إنشاء أحد الاختصارات أو إدخال الإزالة: " + ex.Message; }
         progress(100, "اكتمل تثبيت التطبيق");
         return warning;
     }
 
-    internal static void Uninstall() {
+    internal static string Uninstall() {
         if (!File.Exists(Path.Combine(InstallRoot, Marker))) throw new IOException("لم نجد نسخة مثبّتة بهذا التطبيق.");
         if (GameTranslationInstalled()) throw new IOException("التعريب مركّب داخل اللعبة. افتح التطبيق وأعد ملفات اللعبة الأصلية قبل إزالة التطبيق.");
         if (Process.GetProcessesByName("HytaleArabicManager").Length > 0) throw new IOException("أغلق تطبيق التعريب ثم حاول إزالة التطبيق.");
         string manifest = Path.Combine(InstallRoot, FileList);
         if (!File.Exists(manifest)) throw new IOException("قائمة ملفات التطبيق مفقودة؛ توقفنا حمايةً للملفات الأخرى.");
+        var tracked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string line in File.ReadAllLines(manifest, Encoding.UTF8)) {
             string[] parts = line.Split('|');
             if (parts.Length != 2) throw new IOException("قائمة الملفات غير صالحة.");
             string path = Payload.SafePath(InstallRoot, parts[0]);
+            tracked.Add(path);
             if (File.Exists(path)) {
                 string hash = Payload.Hash(path);
                 if (!hash.Equals(parts[1], StringComparison.OrdinalIgnoreCase))
                     throw new IOException("تغيّر أحد ملفات التطبيق؛ أوقفنا الإزالة حمايةً لتعديلاتك: " + parts[0]);
             }
+        }
+        string packageRoot = Path.Combine(InstallRoot, "package");
+        bool preservePackage = false;
+        foreach (string file in Directory.GetFiles(InstallRoot, "*", SearchOption.AllDirectories)) {
+            if (tracked.Contains(file) || file == manifest || file == Path.Combine(InstallRoot, Marker) || file == Path.Combine(InstallRoot, "Uninstall.exe")) continue;
+            if (!file.StartsWith(packageRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                throw new IOException("وجدنا ملفًا أضيف إلى مجلد التطبيق؛ توقفنا حتى لا نفقده: " + file);
+            preservePackage = true;
+        }
+        string savedPackage = null;
+        if (preservePackage) {
+            savedPackage = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HytaleArabicManagerSavedPackage-" + Guid.NewGuid().ToString("N"));
+            Directory.Move(packageRoot, savedPackage);
         }
         foreach (string line in File.ReadAllLines(manifest, Encoding.UTF8)) {
             string path = Payload.SafePath(InstallRoot, line.Split('|')[0]);
@@ -156,6 +207,7 @@ internal static class SetupProgram {
         if (File.Exists(StartShortcut)) File.Delete(StartShortcut);
         if (File.Exists(DesktopShortcut)) File.Delete(DesktopShortcut);
         Registry.CurrentUser.DeleteSubKey(UninstallKey, false);
+        return savedPackage == null ? "" : "حُفظت حزمة التعريب المحلية في " + savedPackage;
     }
 }
 
@@ -245,7 +297,7 @@ internal sealed class SetupWindow : Form {
         Controls.Add(panel);
         AddLabel(panel, "H", 579,24,48,49,28,Color.FromArgb(218,181,104),true);
         AddLabel(panel, remove ? "إزالة التطبيق" : "تعريب هايتل", 245,23,320,43,20,ForeColor,true);
-        AddLabel(panel, "تطبيق Windows للإصدار 0.7.0", 335,63,230,24,9,Color.FromArgb(154,177,195),false);
+        AddLabel(panel, "تعريب اللعبة 0.7.0  •  التطبيق " + SetupProgram.AppVersion, 255,63,310,24,9,Color.FromArgb(154,177,195),false);
         var line = new Panel {Left=0,Top=97,Width=660,Height=3,BackColor=Color.FromArgb(218,181,104)};
         panel.Controls.Add(line);
         AddLabel(this, remove ? "إزالة التطبيق من هذا الجهاز" : "كل ما تحتاجه في ملف تثبيت واحد", 36,120,588,36,14,ForeColor,true);
@@ -272,7 +324,10 @@ internal sealed class SetupWindow : Form {
         state.ForeColor = Color.FromArgb(154,177,195);
         Controls.Add(state);
         action.SetBounds(36,329,588,48);
-        action.Text = remove ? "إزالة التطبيق" : (File.Exists(Path.Combine(SetupProgram.InstallRoot, SetupProgram.Marker)) ? "فتح التطبيق" : "تثبيت التطبيق");
+        string installedMarker = Path.Combine(SetupProgram.InstallRoot, SetupProgram.Marker);
+        bool installed = File.Exists(installedMarker);
+        bool sameVersion = installed && File.ReadAllText(installedMarker, Encoding.UTF8).Trim() == SetupProgram.AppVersion;
+        action.Text = remove ? "إزالة التطبيق" : sameVersion ? "فتح التطبيق" : installed ? "تحديث التطبيق" : "تثبيت التطبيق";
         action.BackColor = Color.FromArgb(218,181,104);
         action.ForeColor = Color.FromArgb(14,27,43);
         action.FlatStyle = FlatStyle.Flat;
@@ -300,7 +355,8 @@ internal sealed class SetupWindow : Form {
             Close();
             return;
         }
-        if (!removing && File.Exists(Path.Combine(SetupProgram.InstallRoot, SetupProgram.Marker))) {
+        string installedMarker = Path.Combine(SetupProgram.InstallRoot, SetupProgram.Marker);
+        if (!removing && File.Exists(installedMarker) && File.ReadAllText(installedMarker, Encoding.UTF8).Trim() == SetupProgram.AppVersion) {
             string manager = Path.Combine(SetupProgram.InstallRoot, "HytaleArabicManager.exe");
             if (File.Exists(manager)) Process.Start(manager);
             Close();
@@ -318,7 +374,7 @@ internal sealed class SetupWindow : Form {
         bool addDesktop=desktop.Checked;
         var worker = new BackgroundWorker {WorkerReportsProgress=true};
         worker.DoWork += (s,e) => {
-            if (removing) SetupProgram.Uninstall();
+            if (removing) e.Result=SetupProgram.Uninstall();
             else e.Result=SetupProgram.Install(addDesktop, (percent,message) => worker.ReportProgress(percent,message));
         };
         worker.ProgressChanged += (s,e) => {progress.Value=Math.Max(0,Math.Min(100,e.ProgressPercentage));state.Text=(string)e.UserState;};
@@ -332,7 +388,7 @@ internal sealed class SetupWindow : Form {
             }
             progress.Value=100;
             state.Text=removing?"اكتملت إزالة التطبيق":"اكتمل تثبيت التطبيق";
-            if (!removing && e.Result is string && ((string)e.Result).Length>0) MessageBox.Show((string)e.Result,SetupProgram.AppName);
+            if (e.Result is string && ((string)e.Result).Length>0) MessageBox.Show((string)e.Result,SetupProgram.AppName);
             action.Text=removing?"إغلاق":"فتح التطبيق";
             action.Enabled=true;
             completed=true;

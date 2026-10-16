@@ -9,9 +9,6 @@ $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath($GameRoot).TrimEnd('\')
 $package=[IO.Path]::GetFullPath($PackageRoot).TrimEnd('\')
 $manifestPath=Join-Path $package 'manifest.json'
-if(!(Test-Path -LiteralPath $manifestPath -PathType Leaf)){throw 'Prepared localization manifest is missing.'}
-$manifest=[IO.File]::ReadAllText($manifestPath)|ConvertFrom-Json
-if($manifest.Format -ne 1 -or $manifest.GameVersion -ne '0.7.0' -or $manifest.GameRoot -ne $root -or $manifest.Files.Count -ne 19){throw 'Prepared package identity does not match this installation.'}
 $stateDir=Join-Path $root 'UserData\HytaleArabicManager'
 $statePath=Join-Path $stateDir 'state.json'
 function Save-State($state){
@@ -36,18 +33,27 @@ function Copy-Atomic([string]$source,[string]$target){
  }finally{if(Test-Path -LiteralPath $temp){Remove-Item -LiteralPath $temp};if(Test-Path -LiteralPath $replaced){Remove-Item -LiteralPath $replaced}}
 }
 function Progress-Line([string]$operation,[int]$done,[int]$total,[string]$stage){
+ if($operation -eq 'install' -and $script:installOffset -gt 0){$done+=$script:installOffset;$total+=$script:installOffset}
  Write-Output "PROGRESS|$operation|$done|$total|$stage"
 }
+$script:installOffset=0
 $current=$null
 if(Test-Path -LiteralPath $statePath){$current=[IO.File]::ReadAllText($statePath)|ConvertFrom-Json}
 if($Action -eq 'status'){
  $status=if($null -eq $current){'not-installed'}else{$current.Status}
- Write-Output "Localization: $status; package 0.7.0; $($manifest.ArabicKeys) source keys."
+ Write-Output "Localization: $status; package 0.7.0; 15819 source keys."
  return
 }
 Assert-Closed
 if($Action -eq 'install'){
  if($null -ne $current -and $current.Status -ne 'removed'){throw 'Existing localization transaction must be restored first.'}
+ if(!(Test-Path -LiteralPath $manifestPath -PathType Leaf)){
+  & (Join-Path $PSScriptRoot 'PrepareOnDevice.ps1') -GameRoot $root -PackageRoot $package
+  if(!$?){throw 'Local package preparation failed.'}
+  $script:installOffset=10
+ }
+ $manifest=[IO.File]::ReadAllText($manifestPath)|ConvertFrom-Json
+ if($manifest.Format -ne 1 -or $manifest.GameVersion -ne '0.7.0' -or $manifest.GameRoot -ne $root -or $manifest.Files.Count -ne 19){throw 'Prepared package identity does not match this installation.'}
  $installTotal=($manifest.Files.Count*3)+@($manifest.Files|Where-Object{$null -ne $_.BeforeHash}).Count
  $step=0
  Progress-Line 'install' $step $installTotal 'version'

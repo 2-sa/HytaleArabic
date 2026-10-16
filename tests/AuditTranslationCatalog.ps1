@@ -1,4 +1,4 @@
-param(
+﻿param(
  [string]$SourceRoot = (Join-Path $PSScriptRoot '..\src'),
  [string]$ReferenceRoot = (Join-Path $PSScriptRoot 'reference-snapshot-audit'),
  [string]$OutputRoot = (Join-Path $PSScriptRoot 'linguistic-audit')
