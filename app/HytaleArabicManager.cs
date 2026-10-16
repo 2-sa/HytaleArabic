@@ -45,6 +45,7 @@ internal sealed class ManagerWindow : Form {
     private static readonly Color Gold=Color.FromArgb(218,181,104);
     private static readonly Color Good=Color.FromArgb(131,203,176);
     private readonly string bundle=Path.GetDirectoryName(typeof(ManagerWindow).Assembly.Location);
+    private readonly bool portable;
     private readonly TextBox root=new TextBox();
     private readonly TextBox details=new TextBox();
     private readonly Button apply=new Button();
@@ -69,6 +70,7 @@ internal sealed class ManagerWindow : Form {
     private int lastDone, lastTotal;
 
     internal ManagerWindow() {
+        portable=!File.Exists(Path.Combine(bundle,".hytale-arabic-managed"));
         Text="تعريب هايتل";
         ClientSize=new Size(800,565);
         MinimumSize=new Size(800,565);
@@ -366,7 +368,7 @@ internal sealed class ManagerWindow : Form {
         updateButton.Text="نفحص التحديثات...";
         updateButton.BackColor=Surface;updateButton.ForeColor=Ice;
         var worker=new BackgroundWorker();
-        worker.DoWork+=(s,e)=>e.Result=GitHubUpdater.Check();
+        worker.DoWork+=(s,e)=>e.Result=GitHubUpdater.Check(portable);
         worker.RunWorkerCompleted+=(s,e)=>{
             checkingUpdate=false;
             updateButton.Enabled=!running;
@@ -388,10 +390,17 @@ internal sealed class ManagerWindow : Form {
         footerHint.Text="اترك التطبيق مفتوحًا حتى نتحقق من التحديث";
         var selected=availableUpdate;
         var worker=new BackgroundWorker{WorkerReportsProgress=true};
-        worker.DoWork+=(s,e)=>e.Result=GitHubUpdater.Download(selected,p=>worker.ReportProgress(p));
+        worker.DoWork+=(s,e)=>{
+            string file=GitHubUpdater.Download(selected,p=>worker.ReportProgress(portable?p*90/100:p));
+            if(portable){
+                worker.ReportProgress(95);
+                e.Result=GitHubUpdater.ExtractPortable(file,selected.Version);
+            } else e.Result=file;
+        };
         worker.ProgressChanged+=(s,e)=>{
             bar.Percent=Math.Max(0,Math.Min(100,e.ProgressPercentage));bar.Invalidate();
             percent.Text=bar.Percent+"%";
+            if(portable && bar.Percent>=95 && bar.Percent<100)progressText.Text="نجهّز النسخة المحمولة";
             if(bar.Percent==100)progressText.Text="اكتمل تنزيل التحديث والتحقق منه";
         };
         worker.RunWorkerCompleted+=(s,e)=>{
@@ -408,7 +417,7 @@ internal sealed class ManagerWindow : Form {
                 Close();
             } catch(Exception problem) {
                 running=false;apply.Enabled=true;restore.Enabled=true;choose.Enabled=true;updateButton.Enabled=true;
-                progressText.Text="تعذّر فتح المُثبّت";
+                progressText.Text="تعذّر فتح النسخة الجديدة";
                 details.Text=problem.Message;
             }
         };
