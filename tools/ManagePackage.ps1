@@ -11,6 +11,16 @@ $package=[IO.Path]::GetFullPath($PackageRoot).TrimEnd('\')
 $manifestPath=Join-Path $package 'manifest.json'
 $stateDir=Join-Path $root 'UserData\HytaleArabicManager'
 $statePath=Join-Path $stateDir 'state.json'
+function Legacy-TooltipStatus {
+ $relative='install/release/package/game/latest/Client/Data/Game/Interface/InGame/Tooltips/ItemTooltip.ui'
+ $tooltip=Assert-Contained $root $relative
+ if(!(Test-Path -LiteralPath $tooltip -PathType Leaf)){return}
+ $hash=File-Hash $tooltip
+ if($hash -in @('4DB159DB19FB41476EFEA11F41097EDA320733681A3AF61285F8E8C7D16451A0',
+                '5FC37BFE7D52867782659140D2B036232BE0D13CD4AB8E5BFC8462AC71659A9F')){
+  Write-Output 'LegacyTooltip: modified'
+ }
+}
 function Save-State($state){
  [void][IO.Directory]::CreateDirectory($stateDir)
  $temp=Join-Path $stateDir ('state-'+[guid]::NewGuid().ToString('N')+'.tmp')
@@ -42,6 +52,7 @@ if(Test-Path -LiteralPath $statePath){$current=[IO.File]::ReadAllText($statePath
 if($Action -eq 'status'){
  $status=if($null -eq $current){'not-installed'}else{$current.Status}
  Write-Output "Localization: $status; package 0.7.0; 15819 source keys."
+ Legacy-TooltipStatus
  return
 }
 Assert-Closed
@@ -90,7 +101,7 @@ if($Action -eq 'install'){
  }
  return
 }
-if($null -eq $current -or $current.Status -eq 'removed'){Write-Output 'Localization is already removed.';return}
+if($null -eq $current -or $current.Status -eq 'removed'){Write-Output 'Localization is already removed.';Legacy-TooltipStatus;return}
 if($current.Format -ne 1 -or $current.Root -ne $root -or $current.GameVersion -ne '0.7.0' -or $current.Files.Count -ne 19){throw 'Recovery record does not match this game.'}
 if($current.Status -notin @('installed','installing','restoring')){throw 'Unknown recovery state.'}
 $restoreTotal=$current.Files.Count*3
@@ -117,4 +128,5 @@ foreach($item in $current.Files){
 }
 foreach($item in $current.Files){if((File-Hash (Assert-Contained $root $item.Relative)) -ne $item.BeforeHash){throw 'Post-restore verification failed.'};$step++;Progress-Line 'restore' $step $restoreTotal 'verify'}
 $current.Status='removed';Save-State $current
+Legacy-TooltipStatus
 Write-Output 'PASS: original game files restored; official launcher may now update.'

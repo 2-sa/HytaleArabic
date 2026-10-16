@@ -226,6 +226,11 @@ internal sealed class ManagerWindow : Form {
         if(text.IndexOfAny(new []{'"','\r','\n'})>=0) throw new ArgumentException("المسار الذي اخترته غير صالح.");
         return "\""+text+"\"";
     }
+    private static bool IsHytaleOpen() {
+        foreach(string name in new []{"HytaleClient","HytaleLauncher","hytale-launcher"})
+            if(Process.GetProcessesByName(name).Length>0)return true;
+        return false;
+    }
     private string StageText(string stage) {
         switch(stage){
             case "version": return "نتأكد من نسخة اللعبة";
@@ -242,6 +247,11 @@ internal sealed class ManagerWindow : Form {
     }
     private void Run(string action) {
         if(running) return;
+        if(action!="status" && IsHytaleOpen()) {
+            MessageBox.Show(this,"أغلق لعبة هايتل ومشغّلها تمامًا، ثم اضغط الزر مرة أخرى.",
+                "إغلاق اللعبة والمشغّل",MessageBoxButtons.OK,MessageBoxIcon.Information);
+            return;
+        }
         string game,script,package;
         try {
             game=Path.GetFullPath(root.Text.Trim());
@@ -297,11 +307,14 @@ internal sealed class ManagerWindow : Form {
                 SetNextAction(true);
                 footerHint.Text="أغلق التطبيق أو افتح اللعبة من مشغّلها";
             } else if(action=="restore") {
-                statusText.Text="اللعبة جاهزة للتحديث";
-                statusHelp.Text="افتح مشغّل هايتل المعتاد وحدّث اللعبة.";
-                progressText.Text="عادت الملفات الأصلية";
-                SetNextAction(false);
-                footerHint.Text="أغلق التطبيق ثم حدّث اللعبة من مشغّلها";
+                if(result.Output.Contains("LegacyTooltip: modified"))ShowLegacyTooltipWarning();
+                else {
+                    statusText.Text="اللعبة جاهزة للتحديث";
+                    statusHelp.Text="افتح مشغّل هايتل المعتاد وحدّث اللعبة.";
+                    progressText.Text="عادت الملفات الأصلية";
+                    SetNextAction(false);
+                    footerHint.Text="أغلق التطبيق ثم حدّث اللعبة من مشغّلها";
+                }
             } else {
                 UpdateStatus(result.Output);
                 progressText.Text="اختر ما تريد فعله";
@@ -338,11 +351,20 @@ internal sealed class ManagerWindow : Form {
             statusText.Text="يحتاج التعريب إلى استرجاع";
             statusHelp.Text="اضغط «تجهيز اللعبة للتحديث» لإكمال الاسترجاع.";
             SetNextAction(true);
+        } else if(text.Contains("LegacyTooltip: modified")){
+            ShowLegacyTooltipWarning();
         } else {
             statusText.Text="اللعبة بملفاتها الأصلية";
             statusHelp.Text="يمكنك تشغيل التعريب إذا أردت تجربته.";
             SetNextAction(false);
         }
+    }
+    private void ShowLegacyTooltipWarning() {
+        statusText.Text="بقي ملف وصف العناصر معدّلًا";
+        statusHelp.Text="افتح إعدادات مشغّل هايتل واختر التحقق من ملفات اللعبة قبل التحديث.";
+        progressText.Text="يحتاج ملف قديم إلى استرجاع";
+        footerHint.Text="لن نعدّ اللعبة جاهزة للتحديث حتى يعود هذا الملف";
+        apply.Visible=false;applyHint.Visible=false;restore.Visible=false;restoreHint.Visible=false;
     }
     private static string FriendlyError(string raw) {
         if(raw.Contains("Game version changed")||raw.Contains("package identity")) return "نسخة اللعبة تغيّرت؛ تحتاج حزمة تعريب تناسب هذا التحديث. لم نركّب ملفات قديمة.";
