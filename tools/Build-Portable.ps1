@@ -25,5 +25,11 @@ $manager=Join-Path $extract 'HytaleArabicManager.exe'
 if([Reflection.AssemblyName]::GetAssemblyName($manager).Version.ToString() -ne $version){throw 'Manager and installer versions differ.'}
 Remove-Item -LiteralPath (Join-Path $extract '.test-result')
 [void][IO.Directory]::CreateDirectory((Split-Path $output -Parent))
-[IO.Compression.ZipFile]::CreateFromDirectory($extract,$output,[IO.Compression.CompressionLevel]::Optimal,$false)
+$zip=[IO.Compression.ZipFile]::Open($output,[IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach($file in @(Get-ChildItem -LiteralPath $extract -Recurse -File | Sort-Object FullName)) {
+        $name=$file.FullName.Substring($extract.Length+1).Replace('\','/')
+        [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$file.FullName,$name,[IO.Compression.CompressionLevel]::Optimal)
+    }
+} finally { $zip.Dispose() }
 Write-Output "PASS: built portable archive $output for $version. Nothing was installed."

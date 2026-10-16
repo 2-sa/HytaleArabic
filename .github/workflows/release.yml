@@ -58,7 +58,7 @@ jobs:
           .\tools\Build-Portable.ps1 -InstallerPath $installer -OutputPath $portable
           $zip = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $portable).Path)
           try {
-            $names = @($zip.Entries | ForEach-Object FullName)
+            $names = @($zip.Entries | ForEach-Object { $_.FullName.Replace('\','/') })
             foreach ($required in @('HytaleArabicManager.exe','src/client.lang','src/server.lang','tools/PrepareOnDevice.ps1')) {
               if ($names -notcontains $required) { throw "Missing portable entry: $required" }
             }
