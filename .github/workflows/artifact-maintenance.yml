@@ -1,0 +1,86 @@
+name: Artifact storage policy
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+      - '.github/scripts/artifact-policy*'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '.github/scripts/artifact-policy*'
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview cleanup without deleting artifacts
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: artifact-maintenance-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Test retention and active-run protection
+        run: node --test .github/scripts/artifact-policy.test.cjs
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache: false
+      - name: Check maintenance workflow
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          "$(go env GOPATH)/bin/actionlint" -shellcheck= -pyflakes= .github/workflows/artifact-maintenance.yml
+      - name: Enforce one-day artifact retention
+        run: |
+          python -m pip install --quiet PyYAML==6.0.2
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          for path in Path('.github/workflows').glob('*'):
+              if path.suffix not in ('.yml', '.yaml'):
+                  continue
+              workflow = yaml.load(path.read_text(), Loader=yaml.BaseLoader)
+              for job in workflow.get('jobs', {}).values():
+                  for step in job.get('steps', []):
+                      action = step.get('uses', '')
+                      if action.startswith(('actions/upload-artifact@', 'actions/upload-pages-artifact@')):
+                          assert step.get('with', {}).get('retention-days') == '1', f'{path}: {action} must retain artifacts for one day'
+                      if action.startswith('flatpak/flatpak-github-actions/flatpak-builder@'):
+                          assert step.get('with', {}).get('upload-artifact') == 'false', f'{path}: use the explicit one-day upload step'
+          PY
+
+  cleanup:
+    needs: verify
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@v9
+        env:
+          DRY_RUN: ${{ github.event_name != 'schedule' && inputs.dry_run != false }}
+        with:
+          script: |
+            const { run } = require('./.github/scripts/artifact-policy.cjs');
+            await run({ github, context, core, dryRun: process.env.DRY_RUN !== 'false' });
